@@ -15,6 +15,8 @@ class MatlibFactory
 
     protected array $libs_win = ['rindowmatlib.dll'];
     protected array $libs_linux = ['librindowmatlib.so'];
+    protected array $libs_mac = ['librindowmatlib.dylib', '/usr/local/lib/librindowmatlib.dylib', '/usr/lib/librindowmatlib.dylib'];
+
     protected ?string $error = null;
 
     public function __construct(
@@ -32,7 +34,10 @@ class MatlibFactory
         if($libFiles==null) {
             if(PHP_OS=='Linux') {
                 $libFiles = $this->libs_linux;
-            } elseif(PHP_OS=='WINNT') {
+            } elseif(PHP_OS=='Darwin') {
+                $libFiles = $this->libs_mac;
+            }
+            elseif(PHP_OS=='WINNT') {
                 $libFiles = $this->libs_win;
             } else {
                 throw new RuntimeException('Unknown operating system: "'.PHP_OS.'"');
