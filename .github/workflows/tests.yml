@@ -12,7 +12,7 @@ jobs:
     env:
       matlib: 1.1.0
       testlib: 1.1.0
-      repository: rindow/rindow-matlib
+      repository: ${{ github.repository_owner }}/rindow-matlib
 
     strategy:
       fail-fast: true
@@ -34,13 +34,14 @@ jobs:
             os: windows-latest
             php: '8.4'
             phpunit: '11.5'
-
-#          - name: macOS-arm64
-#            os: macos-latest
-#            php: '8.3'
-#          - name: macOS-x86_64
-#            os: macos-13
-#            php: '8.3'
+          - name: macOS-arm64
+            os: macos-latest
+            php: '8.3'
+            phpunit: '11.5'
+          - name: macOS-x86_64
+            os: macos-13
+            php: '8.3'
+            phpunit: '11.5'
   
     steps:
       - name: Setup PHP ${{ matrix.php }}
@@ -49,10 +50,12 @@ jobs:
           php-version: ${{ matrix.php }}
           # PHP Extras
           coverage: none
-          tools: composer, phpunit:${{ matrix.phpunit }}, phpstan
+          tools: composer, phpstan
           #ini-values: "memory_limit=512M"
-          extensions: ffi
-
+          extensions: ffi, mbstring
+        env:
+          fail-fast: true
+  
       - name: Setup Matlib (Linux)
         if: ${{ startsWith(matrix.os, 'ubuntu-') }}
         run: |
@@ -64,38 +67,18 @@ jobs:
       - name: Checkout codes
         uses: "actions/checkout@v4"
 
-      #- name: Composer
-      #  uses: php-actions/composer@v6
-      #  with:
-      #    php_version: ${{ matrix.php }}
-      #    php_extensions: ffi
-
       - name: Composer
         run: |
           composer update
-
-      #- name: PHP Static Analysys
-      #  uses: php-actions/phpstan@v3
-      #  with:
-      #    php_version: ${{ matrix.php }}
-      #    path: src/
+          composer require --dev phpunit/phpunit=^${{ matrix.phpunit }}
 
       - name: PHP Static Analysys
         run: phpstan
 
-      #- name: PHPUnit Tests
-      #  uses: php-actions/phpunit@v3
-      #  with:
-      #    configuration: tests/phpunit.xml
-      #    version: ${{ matrix.phpunit }}
-      #    php_version: ${{ matrix.php }}
-      #    #php_extensions: ffi
-      #    filter: ReleaseTest
-
       - name: PHPUnit Tests
         if: ${{ startsWith(matrix.os, 'ubuntu-') }}
         run: | 
-          phpunit -c tests
+          vendor/bin/phpunit -c tests
 
       - name: PHPUnit Tests (macOS)
         if: ${{ startsWith(matrix.os, 'macos-latest') }}
@@ -105,7 +88,7 @@ jobs:
           tar -xzf rindow-matlib-${{ env.matlib }}-Darwin-arm64.tar.gz
           sudo cp -r usr/include /usr/local/
           sudo cp -r usr/lib /usr/local/
-          phpunit -c tests
+          vendor/bin/phpunit -c tests
 
       - name: PHPUnit Tests (macOS)
         if: ${{ startsWith(matrix.os, 'macos-13') }}
@@ -115,7 +98,7 @@ jobs:
           tar -xzf rindow-matlib-${{ env.matlib }}-Darwin-x86_64.tar.gz
           sudo cp -r usr/include /usr/local/
           sudo cp -r usr/lib /usr/local/
-          phpunit -c tests
+          vendor/bin/phpunit -c tests
 
       - name: PHPUnit Tests (Windows)
         if: ${{ startsWith(matrix.os, 'windows-') }}
@@ -125,4 +108,4 @@ jobs:
           $currentDir = (Get-Location).Path
           $matlibDir = Join-Path -Path $currentDir -ChildPath 'matlib\bin'
           $env:PATH = "$matlibDir;$env:PATH"
-          phpunit -c tests --filter MatlibTest::testaddSameSizeNormal
+          vendor/bin/phpunit -c tests
